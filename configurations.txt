@@ -1,0 +1,290 @@
+# LittleBigWorld VS/OpenGL Setup Notes
+
+---
+
+## PROJECT CONFIG
+
+Project Properties top settings:
+
+Configuration:
+All Configurations
+
+Platform:
+x64
+
+Reason:
+
+* all libraries built for x64
+* Win32 causes linker/runtime errors
+
+---
+
+## RUNTIME LIBRARY (/MDd vs /MTd)
+
+Location:
+Configuration Properties → C/C++ → Code Generation → Runtime Library
+
+Use: /MDd
+Not: /MTd
+
+Reason:
+* libraries use /MDd
+* some may build /MTd by default
+* mismatching runtimes caused:
+  LNK2038 RuntimeLibrary mismatch
+
+Fix:
+* build Bullet using /MDd
+
+Final:
+Debug:
+/MDd
+
+Release:
+/MD
+
+---
+
+## INCLUDE DIRECTORIES
+
+Location:
+C/C++ →
+General →
+Additional Include Directories
+
+Added:
+
+C:\Users\jacob\Desktop\LittleBigWorld\libs\glfw\include;
+C:\Users\jacob\Desktop\LittleBigWorld\libs\glad\include;
+C:\Users\jacob\Desktop\LittleBigWorld\libs\bullet\include;
+C:\Users\jacob\Desktop\LittleBigWorld\libs\assimp\include;
+C:\Users\jacob\Desktop\LittleBigWorld\libs\glm;
+%(AdditionalIncludeDirectories)
+
+Reason:
+
+* allows compiler to find headers
+
+Fixes:
+
+* cannot open source file errors
+
+---
+
+## LIBRARY DIRECTORIES
+
+Location:
+Linker →
+General →
+Additional Library Directories
+
+Added:
+
+C:\Users\jacob\Desktop\LittleBigWorld\libs\glfw\lib-vc2022;
+C:\Users\jacob\Desktop\LittleBigWorld\libs\bullet\lib\Debug;
+C:\Users\jacob\Desktop\LittleBigWorld\libs\assimp\lib\x64;
+%(AdditionalLibraryDirectories)
+
+Reason:
+
+* tells linker where .lib files are
+
+Fixes:
+
+* LNK1104
+* unresolved external symbol
+
+---
+
+## ADDITIONAL DEPENDENCIES
+
+Location:
+Linker →
+Input →
+Additional Dependencies
+
+Added:
+
+glfw3.lib;
+opengl32.lib;
+assimp-vc143-mt.lib;
+BulletCollision_Debug.lib;
+BulletDynamics_Debug.lib;
+LinearMath_Debug.lib;
+%(AdditionalDependencies)
+
+---
+
+## GLAD SETUP
+
+GLAD is NOT a .lib.
+
+Added manually to project:
+
+C:\Users\jacob\Desktop\LittleBigWorld\libs\glad\src\glad.c
+
+Right Click Project →
+Add →
+Existing Item
+
+Fixes:
+
+* unresolved external symbol gladLoadGLLoader
+
+---
+
+## BULLET REBUILD
+
+Original Bullet runtime:
+/MTd
+
+Needed:
+/MDd
+
+Opened:
+x64 Native Tools Command Prompt for VS 2026
+
+Commands:
+
+cd C:\Users\jacob\Desktop\bullet3-3.25
+
+mkdir build
+
+cd build
+
+cmake .. -G "Visual Studio 18 2026" -A x64 ^
+-DCMAKE_POLICY_VERSION_MINIMUM=3.5 ^
+-DBUILD_SHARED_LIBS=OFF ^
+-DUSE_MSVC_RUNTIME_LIBRARY_DLL=ON
+
+cmake --build . --config Debug
+
+Reason:
+
+* rebuild Bullet using /MDd runtime
+
+---
+
+## ASSIMP DLL FIX
+
+Problem:
+
+* assimp-vc143-mt.dll not found at runtime
+
+Copied:
+assimp-vc143-mt.dll
+
+FROM:
+libs\assimp\bin\x64
+
+TO:
+same directory as LittleBigWorld.exe
+
+Reason:
+
+* Windows searches executable directory for runtime DLLs
+
+---
+
+## WORKING DIRECTORY FIX
+
+Location:
+Project Properties →
+Debugging →
+Working Directory
+
+Changed:
+default working directory
+->
+$(ProjectDir)
+
+Reason:
+
+* fixes relative paths for:
+  assets/
+  shaders/
+  textures/
+
+Fixes:
+
+* failed to open texture file
+* shader file not found
+
+---
+
+## OUTPUT / INTERMEDIATE DIRECTORY CHANGE
+
+Intermediate Directory changed:
+
+$(SolutionDir)$(Platform)$(Configuration)\
+
+->
+
+$(SolutionDir)build\intermediate$(Configuration)\
+
+Reason:
+
+* stores temporary compiler/linker files in centralized build folder
+* keeps root project cleaner
+
+Intermediate files:
+
+* .obj
+* .ilk
+* .idb
+* build logs
+
+These are disposable temporary build artifacts.
+
+---
+
+Output Directory changed:
+
+$(ShortProjectName)$(Platform)$(Configuration)\
+
+->
+
+$(SolutionDir)build$(Configuration)\
+
+Reason:
+
+* centralizes executable/runtime output
+* avoids duplicate x64/Debug folders
+* cleaner project structure
+
+Output files:
+
+* .exe
+* .dll
+* .pdb
+
+These are the actual runnable application files.
+
+---
+
+## COMMON ERRORS ENCOUNTERED
+
+* LNK1104 cannot open file
+* LNK2019 unresolved external symbol
+* LNK2038 RuntimeLibrary mismatch
+* missing runtime DLL
+* shader compile/link errors
+* failed to open texture file
+
+---
+
+## FINAL WORKING SETUP
+
+Architecture:
+x64
+
+Runtime:
+/MDd
+
+Libraries:
+
+* GLFW
+* GLAD
+* GLM
+* Assimp
+* Bullet Physics
