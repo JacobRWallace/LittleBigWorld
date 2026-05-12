@@ -98,6 +98,37 @@ public:
         }
     }
 
+    // Calculate bounding box of the model
+    void GetBoundingBox(glm::vec3& outMin, glm::vec3& outMax) const
+    {
+        outMin = glm::vec3(FLT_MAX);
+        outMax = glm::vec3(-FLT_MAX);
+
+        for (const auto& mesh : meshes)
+        {
+            for (const auto& vertex : mesh.vertices)
+            {
+                outMin = glm::min(outMin, vertex.Position);
+                outMax = glm::max(outMax, vertex.Position);
+            }
+        }
+
+        // Clamp in case no vertices were found
+        if (outMin.x == FLT_MAX)
+        {
+            outMin = glm::vec3(0.0f);
+            outMax = glm::vec3(1.0f);
+        }
+    }
+
+    // Get the dimensions (size) of the bounding box
+    glm::vec3 GetDimensions() const
+    {
+        glm::vec3 min, max;
+        GetBoundingBox(min, max);
+        return max - min;
+    }
+
     void SetTexture(GLuint textureID)
     {
         defaultTexture = textureID;
@@ -177,6 +208,13 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         return texture;
+    }
+
+    static GLuint LoadTexturePNG(const std::string& path)
+    {
+        // For now, return placeholder and let Assimp handle textures from MTL
+        std::cout << "PNG loading deferred to Assimp MTL handler: " << path << std::endl;
+        return CreatePlaceholderTexture();
     }
 
 private:

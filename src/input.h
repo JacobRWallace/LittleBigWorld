@@ -13,6 +13,7 @@ private:
     glm::vec3 currentMouseWorldPos;
     glm::vec3 lastMouseWorldPos;
     RigidBody* selectedBody;
+    RigidBody* hoveredBody;
     bool isDragging;
     glm::vec3 dragOffset;
 
@@ -28,6 +29,7 @@ public:
           currentMouseWorldPos(0.0f),
           lastMouseWorldPos(0.0f),
           selectedBody(nullptr),
+          hoveredBody(nullptr),
           isDragging(false),
           dragOffset(0.0f),
           screenWidth(width),
@@ -100,6 +102,27 @@ public:
             selectedBody->body->setLinearVelocity(btVector3(0, 0, 0));
             selectedBody->body->setAngularVelocity(btVector3(0, 0, 0));
         }
+
+        // Update hovered body every frame
+        UpdateHoveredBody(cameraPos, cameraDir, cameraUp, fov);
+    }
+
+    void UpdateHoveredBody(glm::vec3 cameraPos, glm::vec3 cameraDir, glm::vec3 cameraUp, float fov)
+    {
+        glm::vec3 rayDir = GetRayFromMouse(cameraPos, cameraDir, cameraUp, fov);
+        glm::vec3 rayEnd = cameraPos + rayDir * 1000.0f;
+
+        hoveredBody = physics->RaycastClosest(cameraPos, rayEnd);
+    }
+
+    bool IsHoveringBody(RigidBody* body) const
+    {
+        return hoveredBody == body && !isDragging;
+    }
+
+    bool IsGrabbingBody(RigidBody* body) const
+    {
+        return selectedBody == body && isDragging;
     }
 };
 

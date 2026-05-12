@@ -39,10 +39,10 @@ public:
         if (!body)
             return;
 
-        // Lock all rotations by default (no spinning)
+        // Lock all rotations - this is a 2.5D environment, no spinning
         body->setAngularFactor(btVector3(0, 0, 0));
 
-        // Lock Z linear motion
+        // Lock Z linear motion - objects stay on their layer
         body->setLinearFactor(btVector3(1, 1, 0));
 
         // Constrain Z position to the layer
@@ -156,6 +156,10 @@ public:
         solver = new btSequentialImpulseConstraintSolver();
         dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
         dynamicsWorld->setGravity(btVector3(0, -9.81f, 0));
+
+        // Improve collision handling
+        dynamicsWorld->getDispatchInfo().m_useContinuous = true;
+        dynamicsWorld->getSolverInfo().m_numIterations = 10;
     }
 
     ~PhysicsEngine()
@@ -202,6 +206,11 @@ public:
 
         btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(mass, motionState, shape, inertia);
         btRigidBody* rigidBody = new btRigidBody(rigidBodyCI);
+
+        // 2.5D physics settings
+        rigidBody->setDamping(0.1f, 0.0f);  // Minimal linear damping, no angular (locked anyway)
+        rigidBody->setRestitution(0.5f);    // Normal bounce
+
         dynamicsWorld->addRigidBody(rigidBody);
 
         RigidBody* wrapper = new RigidBody(rigidBody, layer);
@@ -232,9 +241,24 @@ public:
         if (dynamicsWorld)
         {
             dynamicsWorld->stepSimulation(deltaTime, 10);
+
+            // After physics step, enforce layer constraints
             for (size_t i = 0; i < rigidBodies.size(); i++)
             {
-                rigidBodies[i]->updateMatrix();
+                RigidBody* rb = rigidBodies[i];
+                rb->updateMatrix();
+
+                // Force Z position to stay on layer to prevent drift
+                btTransform trans;
+                rb->body->getMotionState()->getWorldTransform(trans);
+                float layerZ = rb->GetLayerZ(rb->layerIndex);
+
+                btVector3 pos = trans.getOrigin();
+                if (glm::abs(pos.getZ() - layerZ) > 0.01f)
+                {
+                    trans.setOrigin(btVector3(pos.getX(), pos.getY(), layerZ));
+                    rb->body->getMotionState()->setWorldTransform(trans);
+                }
             }
         }
     }

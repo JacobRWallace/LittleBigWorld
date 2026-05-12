@@ -153,11 +153,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\camera.h" />
+    <ClInclude Include="src\debug.h" />
     <ClInclude Include="src\input.h" />
     <ClInclude Include="src\model.h" />
     <ClInclude Include="src\object.h" />
     <ClInclude Include="src\physics.h" />
     <ClInclude Include="src\shader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\shaders\debug_hitboxOutline.glsl" />
+    <None Include="assets\shaders\debug_hitboxColor.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -41,5 +41,16 @@
     <ClInclude Include="src\shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\shaders\debug_hitboxOutline.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="assets\shaders\debug_hitboxColor.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
