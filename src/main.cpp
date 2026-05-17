@@ -13,6 +13,7 @@
 #include "physics.h"
 #include "model.h"
 #include "debug.h"
+#include "cursor.h"
 
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
@@ -24,6 +25,7 @@ Input* gInput = nullptr;
 PhysicsEngine* gPhysics = nullptr;
 Model* gCubeModel = nullptr;
 Debug* gDebug = nullptr;
+CursorManager* gCursor = nullptr;
 
 // GLFW callbacks
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -92,6 +94,8 @@ int main()
 	gInput = new Input(SCR_WIDTH, SCR_HEIGHT, gPhysics);
 	gCubeModel = cubeModel;
 	gDebug = new Debug();
+	gCursor = new CursorManager(window);
+	gCursor->LoadCursors("assets/cursor_pointer.png", "assets/cursor_grab.png");
 
 	// Create test cube object with all properties
 	// OBJ cube ranges from -1 to 1, so it's 2x2x2 in size
@@ -183,7 +187,6 @@ int main()
 				btBoxShape* boxShape = static_cast<btBoxShape*>(shape);
 				btVector3 halfExtents = boxShape->getHalfExtentsWithMargin();
 
-				glm::vec3 center = rigidBody->GetPosition();
 				glm::vec3 extents = glm::vec3(halfExtents.getX(), halfExtents.getY(), halfExtents.getZ());
 
 				// Default green color
@@ -201,10 +204,25 @@ int main()
 					boxColor = glm::vec3(1.0f, 0.0f, 0.0f);  // Red when grabbed
 				}
 
-				gDebug->AddBox(center, extents, boxColor);
+				// Use the rigid body's model matrix which includes rotation
+				gDebug->AddBoxWithTransform(rigidBody->modelMatrix, extents, boxColor);
 			}
 		}
 		gDebug->Render(shader, projection, view);
+
+		// Update cursor based on interaction state
+		if (gInput->IsGrabbingAny())
+		{
+			gCursor->SetGrabbingCursor();
+		}
+		else if (gInput->IsHoveringAny())
+		{
+			gCursor->SetGrabCursor();  // Show grab cursor when hovering over objects
+		}
+		else
+		{
+			gCursor->SetNormalCursor();
+		}
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -215,6 +233,7 @@ int main()
 	delete gInput;
 	delete gPhysics;
 	delete gDebug;
+	delete gCursor;
 	delete cubeModel;
 	delete podModel;
 

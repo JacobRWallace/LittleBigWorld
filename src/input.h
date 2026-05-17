@@ -65,10 +65,12 @@ public:
         glm::vec3 rayDir = GetRayFromMouse(cameraPos, cameraDir, cameraUp, fov);
         glm::vec3 rayEnd = cameraPos + rayDir * 1000.0f;
 
-        selectedBody = physics->RaycastClosest(cameraPos, rayEnd);
+        RigidBody* hitBody = physics->RaycastClosest(cameraPos, rayEnd);
 
-        if (selectedBody)
+        // Only allow grabbing if the body is dynamic (not static plane)
+        if (hitBody && hitBody->body->getMass() > 0.0f)
         {
+            selectedBody = hitBody;
             isDragging = true;
             lastMousePos = mousePos;
             currentMouseWorldPos = cameraPos + rayDir * MOUSE_DRAG_PLANE;
@@ -112,7 +114,17 @@ public:
         glm::vec3 rayDir = GetRayFromMouse(cameraPos, cameraDir, cameraUp, fov);
         glm::vec3 rayEnd = cameraPos + rayDir * 1000.0f;
 
-        hoveredBody = physics->RaycastClosest(cameraPos, rayEnd);
+        RigidBody* hitBody = physics->RaycastClosest(cameraPos, rayEnd);
+
+        // Only allow hovering over dynamic objects (not static plane)
+        if (hitBody && hitBody->body->getMass() > 0.0f)
+        {
+            hoveredBody = hitBody;
+        }
+        else
+        {
+            hoveredBody = nullptr;
+        }
     }
 
     bool IsHoveringBody(RigidBody* body) const
@@ -123,6 +135,16 @@ public:
     bool IsGrabbingBody(RigidBody* body) const
     {
         return selectedBody == body && isDragging;
+    }
+
+    bool IsHoveringAny() const
+    {
+        return hoveredBody != nullptr && !isDragging;
+    }
+
+    bool IsGrabbingAny() const
+    {
+        return selectedBody != nullptr && isDragging;
     }
 };
 

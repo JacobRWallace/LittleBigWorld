@@ -39,10 +39,10 @@ public:
         if (!body)
             return;
 
-        // Lock all rotations - this is a 2.5D environment, no spinning
-        body->setAngularFactor(btVector3(0, 0, 0));
+        // Allow rotation ONLY on Z axis (objects can tip/rotate on their layer)
+        body->setAngularFactor(btVector3(0, 0, 1));
 
-        // Lock Z linear motion - objects stay on their layer
+        // Lock Z linear motion only - allow X and Y for gravity and movement
         body->setLinearFactor(btVector3(1, 1, 0));
 
         // Constrain Z position to the layer
@@ -62,7 +62,7 @@ public:
         if (body)
         {
             if (enable)
-                body->setAngularFactor(btVector3(0, 1, 0));  // Only Y-axis rotation (turn in place)
+                body->setAngularFactor(btVector3(0, 0, 1));  // Only Z-axis rotation (turn in place)
             else
                 body->setAngularFactor(btVector3(0, 0, 0));  // No rotation
         }
@@ -86,11 +86,6 @@ public:
 
         btTransform trans;
         body->getMotionState()->getWorldTransform(trans);
-
-        // Only constrain Z to layer after physics update
-        float layerZ = GetLayerZ(layerIndex);
-        btVector3 pos = trans.getOrigin();
-        trans.setOrigin(btVector3(pos.getX(), pos.getY(), layerZ));
 
         btScalar m[16];
         trans.getOpenGLMatrix(m);
@@ -210,8 +205,14 @@ public:
         // 2.5D physics settings
         rigidBody->setDamping(0.1f, 0.0f);  // Minimal linear damping, no angular (locked anyway)
         rigidBody->setRestitution(0.5f);    // Normal bounce
+        rigidBody->setCollisionFlags(rigidBody->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
-        dynamicsWorld->addRigidBody(rigidBody);
+        // Prevent sleeping so gravity works
+        rigidBody->setSleepingThresholds(0.0f, 0.0f);
+        rigidBody->activate(true);
+
+        // Add with default collision group and mask to allow object-to-object collision
+        dynamicsWorld->addRigidBody(rigidBody, 1, -1);
 
         RigidBody* wrapper = new RigidBody(rigidBody, layer);
         rigidBodies.push_back(wrapper);
@@ -242,23 +243,26 @@ public:
         {
             dynamicsWorld->stepSimulation(deltaTime, 10);
 
-            // After physics step, enforce layer constraints
+            // After physics step, enforce Z layer constraints
             for (size_t i = 0; i < rigidBodies.size(); i++)
             {
                 RigidBody* rb = rigidBodies[i];
-                rb->updateMatrix();
 
-                // Force Z position to stay on layer to prevent drift
                 btTransform trans;
                 rb->body->getMotionState()->getWorldTransform(trans);
                 float layerZ = rb->GetLayerZ(rb->layerIndex);
-
                 btVector3 pos = trans.getOrigin();
+
+                // Only correct Z if it drifts - allow Y to fall freely!
                 if (glm::abs(pos.getZ() - layerZ) > 0.01f)
                 {
-                    trans.setOrigin(btVector3(pos.getX(), pos.getY(), layerZ));
+                    pos.setZ(layerZ);
+                    trans.setOrigin(pos);
                     rb->body->getMotionState()->setWorldTransform(trans);
+                    rb->body->setWorldTransform(trans);
                 }
+
+                rb->updateMatrix();
             }
         }
     }

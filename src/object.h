@@ -22,6 +22,7 @@ struct Object
 
     // Interaction properties
     bool canBeSelected;        // Can this object be selected by the player
+    bool canBeGrabbed;         // Can this object be grabbed and moved
     bool allowRotation;        // Can this object be rotated
 
     // Object metadata
@@ -38,6 +39,7 @@ struct Object
           highlightColor(1.2f, 1.2f, 1.2f),
           isHighlighted(false),
           canBeSelected(true),
+          canBeGrabbed(true),
           allowRotation(false),
           name("Object"),
           layerIndex(1)
@@ -54,6 +56,7 @@ struct Object
           highlightColor(1.2f, 1.2f, 1.2f),
           isHighlighted(false),
           canBeSelected(true),
+          canBeGrabbed(true),
           allowRotation(false),
           name(objectName),
           layerIndex(1)

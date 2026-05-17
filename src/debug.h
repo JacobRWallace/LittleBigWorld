@@ -46,17 +46,62 @@ public:
 
     void AddBox(glm::vec3 center, glm::vec3 halfExtents, glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f))
     {
-        // Get all 8 corners of the box
+        // Get all 8 corners of the box in local space
         glm::vec3 corners[8] = {
-            center + glm::vec3(-halfExtents.x, -halfExtents.y, -halfExtents.z),
-            center + glm::vec3(halfExtents.x, -halfExtents.y, -halfExtents.z),
-            center + glm::vec3(halfExtents.x, halfExtents.y, -halfExtents.z),
-            center + glm::vec3(-halfExtents.x, halfExtents.y, -halfExtents.z),
-            center + glm::vec3(-halfExtents.x, -halfExtents.y, halfExtents.z),
-            center + glm::vec3(halfExtents.x, -halfExtents.y, halfExtents.z),
-            center + glm::vec3(halfExtents.x, halfExtents.y, halfExtents.z),
-            center + glm::vec3(-halfExtents.x, halfExtents.y, halfExtents.z),
+            glm::vec3(-halfExtents.x, -halfExtents.y, -halfExtents.z),
+            glm::vec3(halfExtents.x, -halfExtents.y, -halfExtents.z),
+            glm::vec3(halfExtents.x, halfExtents.y, -halfExtents.z),
+            glm::vec3(-halfExtents.x, halfExtents.y, -halfExtents.z),
+            glm::vec3(-halfExtents.x, -halfExtents.y, halfExtents.z),
+            glm::vec3(halfExtents.x, -halfExtents.y, halfExtents.z),
+            glm::vec3(halfExtents.x, halfExtents.y, halfExtents.z),
+            glm::vec3(-halfExtents.x, halfExtents.y, halfExtents.z),
         };
+
+        // Transform corners to world space
+        for (int i = 0; i < 8; i++)
+        {
+            corners[i] = center + corners[i];
+        }
+
+        // Bottom face
+        AddLine(corners[0], corners[1], color);
+        AddLine(corners[1], corners[2], color);
+        AddLine(corners[2], corners[3], color);
+        AddLine(corners[3], corners[0], color);
+
+        // Top face
+        AddLine(corners[4], corners[5], color);
+        AddLine(corners[5], corners[6], color);
+        AddLine(corners[6], corners[7], color);
+        AddLine(corners[7], corners[4], color);
+
+        // Vertical edges
+        AddLine(corners[0], corners[4], color);
+        AddLine(corners[1], corners[5], color);
+        AddLine(corners[2], corners[6], color);
+        AddLine(corners[3], corners[7], color);
+    }
+
+    void AddBoxWithTransform(glm::mat4 transform, glm::vec3 halfExtents, glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f))
+    {
+        // Get all 8 corners of the box in local space
+        glm::vec3 corners[8] = {
+            glm::vec3(-halfExtents.x, -halfExtents.y, -halfExtents.z),
+            glm::vec3(halfExtents.x, -halfExtents.y, -halfExtents.z),
+            glm::vec3(halfExtents.x, halfExtents.y, -halfExtents.z),
+            glm::vec3(-halfExtents.x, halfExtents.y, -halfExtents.z),
+            glm::vec3(-halfExtents.x, -halfExtents.y, halfExtents.z),
+            glm::vec3(halfExtents.x, -halfExtents.y, halfExtents.z),
+            glm::vec3(halfExtents.x, halfExtents.y, halfExtents.z),
+            glm::vec3(-halfExtents.x, halfExtents.y, halfExtents.z),
+        };
+
+        // Transform corners to world space using the matrix
+        for (int i = 0; i < 8; i++)
+        {
+            corners[i] = glm::vec3(transform * glm::vec4(corners[i], 1.0f));
+        }
 
         // Bottom face
         AddLine(corners[0], corners[1], color);
