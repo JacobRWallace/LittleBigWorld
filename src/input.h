@@ -109,6 +109,7 @@ public:
         UpdateHoveredBody(cameraPos, cameraDir, cameraUp, fov);
     }
 
+private:
     void UpdateHoveredBody(glm::vec3 cameraPos, glm::vec3 cameraDir, glm::vec3 cameraUp, float fov)
     {
         glm::vec3 rayDir = GetRayFromMouse(cameraPos, cameraDir, cameraUp, fov);
@@ -126,6 +127,8 @@ public:
             hoveredBody = nullptr;
         }
     }
+
+public:
 
     bool IsHoveringBody(RigidBody* body) const
     {

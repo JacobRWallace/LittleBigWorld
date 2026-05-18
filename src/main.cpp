@@ -1,5 +1,16 @@
 // main.cpp : LittleBigWorld - LBP 2.5D Create Mode
 
+// TODO: Make background border have walls and ceiling so objects don't fall out of the world.
+// TODO: Make objects directory that contains .json files for each object type that define their properties (dimensions, friction, colors, etc) and load them at runtime instead of hardcoding in the code. This will allow for easier editing and adding new objects without recompiling.
+// TODO: Make background border a separate object with its own collision shape so it can be edited and textured separately from the flat plane background.
+// TODO: Make background a 3D model with proper textures instead of just a flat plane. This will allow for more interesting level design and visual variety.
+// TODO: Make background a .json object file that is loaded in every level.
+// TODO: Make Cube object a .json as well as pod.json that can be edited and reloaded without recompiling.
+
+
+
+
+
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -14,6 +25,8 @@
 #include "model.h"
 #include "debug.h"
 #include "cursor.h"
+#include "object_manager.h"
+#include "spawn_manager.h"
 
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
@@ -26,11 +39,17 @@ PhysicsEngine* gPhysics = nullptr;
 Model* gCubeModel = nullptr;
 Debug* gDebug = nullptr;
 CursorManager* gCursor = nullptr;
+ObjectManager* gObjectManager = nullptr;
+SpawnManager* gSpawnManager = nullptr;
+
+// Model cache
+std::map<std::string, Model*> gModelCache;
 
 // GLFW callbacks
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 int main()
 {
@@ -59,6 +78,7 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
+	glfwSetKeyCallback(window, key_callback);
 
 	// Load OpenGL function pointers with GLAD
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -85,9 +105,6 @@ int main()
 	// Load model with placeholder texture
 	Model* cubeModel = new Model("assets/cube.obj", placeholderTexture);
 
-	// Load pod model
-	Model* podModel = new Model("assets/pod/pod.obj", placeholderTexture);
-
 	// Initialize instances
 	gPhysics = new PhysicsEngine();
 	gCamera = new Camera();
@@ -97,38 +114,38 @@ int main()
 	gCursor = new CursorManager(window);
 	gCursor->LoadCursors("assets/cursor_pointer.png", "assets/cursor_grab.png");
 
-	// Create test cube object with all properties
-	// OBJ cube ranges from -1 to 1, so it's 2x2x2 in size
-	Object cubeObject("TestCube", cubeModel, 1.0f, glm::vec3(2.0f, 2.0f, 2.0f));
-	cubeObject.baseColor = glm::vec3(0.8f, 0.8f, 0.9f);
-	cubeObject.highlightColor = glm::vec3(1.2f, 1.2f, 1.5f);
-	cubeObject.friction = 0.8f;
-	cubeObject.canBeSelected = true;
-	cubeObject.layerIndex = 1;
+	// Initialize ObjectManager and load objects
+	gObjectManager = new ObjectManager();
+	if (!gObjectManager->Load("assets/objects"))
+	{
+		std::cerr << "Failed to load objects!" << std::endl;
+	}
 
-	// Get pod model dimensions and scale them appropriately
-	glm::vec3 podModelDimensions = podModel->GetDimensions();
-	glm::vec3 podDimensions = podModelDimensions * 0.01f;  // Scale down to match rendering scale
+	// Build palette and print info
+	gObjectManager->BuildPalette();
+	gObjectManager->PrintPalette();
+	gObjectManager->PrintStats();
 
-	// Create pod object with scaled dimensions
-	Object cubeObject2("Pod", podModel, 2.0f, podDimensions);
-	cubeObject2.baseColor = glm::vec3(0.9f, 0.8f, 0.8f);
-	cubeObject2.highlightColor = glm::vec3(1.5f, 1.2f, 1.2f);
-	cubeObject2.friction = 0.8f;
-	cubeObject2.canBeSelected = true;
-	cubeObject2.layerIndex = 1;
+	// Initialize SpawnManager
+	gSpawnManager = new SpawnManager(gObjectManager, gPhysics);
 
-	// Add physics bodies
-	gPhysics->AddPlane(0.0f);  // Floor
+	// Load models for all objects
+	for (const auto& name : gObjectManager->GetPaletteOrder())
+	{
+		const ObjectDef* def = gObjectManager->Get(name);
+		if (def && gModelCache.find(def->model.path) == gModelCache.end())
+		{
+			gModelCache[def->model.path] = new Model(def->model.path.c_str(), placeholderTexture);
+		}
+	}
 
-	RigidBody* cubeBody = gPhysics->AddBox(glm::vec3(0.0f, 2.0f, 0.0f), cubeObject.dimensions, cubeObject.weight, 1);
-	RigidBody* cubeBody2 = gPhysics->AddBox(glm::vec3(5.0f, 4.0f, 0.0f), cubeObject2.dimensions, cubeObject2.weight, 1);
-	cubeBody->body->setFriction(cubeObject.friction);
+	// Spawn floor only
+	gPhysics->AddPlane(0.0f);
 
-	float lastFrame = 0.0f;
+	// TODO: Load objects from JSON via ObjectManager
+	// For now, physics bodies will be created when objects are spawned from JSON
 
-	// Main loop
-	while (!glfwWindowShouldClose(window)) {
+	float lastFrame = 0.0f;	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = (float)glfwGetTime();
 		float deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -165,17 +182,21 @@ int main()
 		shader.setMat4("model", floorModel);
 		cubeModel->Draw();
 
-		// Render cube object
-		glm::mat4 cubeModelMatrix = cubeBody->modelMatrix;
-		shader.setMat4("model", cubeModelMatrix);
-		cubeObject.model->Draw();
+		// Render spawned objects
+		for (const auto& spawnedObj : gSpawnManager->GetSpawnedObjects())
+		{
+			if (spawnedObj.rigidBody && spawnedObj.rigidBody->objectDef && spawnedObj.model)
+			{
+				glm::mat4 modelMatrix = spawnedObj.rigidBody->modelMatrix;
 
-		// Render second cube object
-		glm::mat4 cubeModelMatrix2 = cubeBody2->modelMatrix;
-		cubeModelMatrix2 = glm::translate(cubeModelMatrix2, glm::vec3(0.0f, -podDimensions.y * 0.5f, 0.0f));
-		cubeModelMatrix2 = glm::scale(cubeModelMatrix2, glm::vec3(0.01f, 0.01f, 0.01f));
-		shader.setMat4("model", cubeModelMatrix2);
-		cubeObject2.model->Draw();
+				// Apply model offset and scale
+				modelMatrix = glm::translate(modelMatrix, spawnedObj.rigidBody->objectDef->model.offset);
+				modelMatrix = glm::scale(modelMatrix, spawnedObj.rigidBody->objectDef->model.scale);
+
+				shader.setMat4("model", modelMatrix);
+				spawnedObj.model->Draw();
+			}
+		}
 
 		// Draw debug hitboxes for all rigid bodies
 		gDebug->Clear();
@@ -234,8 +255,15 @@ int main()
 	delete gPhysics;
 	delete gDebug;
 	delete gCursor;
+	delete gObjectManager;
+	delete gSpawnManager;
+
+	// Clean up models
 	delete cubeModel;
-	delete podModel;
+	for (auto& pair : gModelCache)
+	{
+		delete pair.second;
+	}
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
@@ -251,7 +279,25 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 	{
-		gInput->OnMouseButtonPress(gCamera->GetPosition(), gCamera->GetFront(), gCamera->GetUp(), FOV);
+		// Check if in spawn mode
+		if (gSpawnManager->IsSpawning())
+		{
+			// Raycast to find where to spawn
+			glm::vec3 rayDir = gInput->GetRayFromMouse(gCamera->GetPosition(), gCamera->GetFront(), gCamera->GetUp(), FOV);
+			glm::vec3 spawnPos = gCamera->GetPosition() + rayDir * 20.0f;  // Spawn 20 units forward
+
+			// Get model for spawning
+			const ObjectDef* def = gObjectManager->GetSelectedPaletteObject();
+			if (def && gModelCache.count(def->model.path))
+			{
+				gSpawnManager->SpawnAtPosition(spawnPos, gModelCache[def->model.path]);
+			}
+		}
+		else
+		{
+			// Normal grab interaction
+			gInput->OnMouseButtonPress(gCamera->GetPosition(), gCamera->GetFront(), gCamera->GetUp(), FOV);
+		}
 	}
 	else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
 	{
@@ -263,6 +309,57 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
 	gInput->UpdateMousePos(xpos, ypos);
 	gInput->UpdateDragging(gCamera->GetPosition(), gCamera->GetFront(), gCamera->GetUp(), FOV);
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (action != GLFW_PRESS)
+		return;
+
+	// ESC to cancel spawn mode
+	if (key == GLFW_KEY_ESCAPE)
+	{
+		if (gSpawnManager->IsSpawning())
+		{
+			gSpawnManager->CancelSpawning();
+		}
+		return;
+	}
+
+	// Number keys 0-9 to select object for spawning
+	if (key >= GLFW_KEY_0 && key <= GLFW_KEY_9)
+	{
+		int index = key - GLFW_KEY_0;
+		if (gObjectManager->SelectPaletteItem(index))
+		{
+			const ObjectDef* def = gObjectManager->GetSelectedPaletteObject();
+			if (def)
+			{
+				gSpawnManager->StartSpawning(def->name);
+			}
+		}
+		return;
+	}
+
+	// P to print palette
+	if (key == GLFW_KEY_P)
+	{
+		gObjectManager->PrintPalette();
+		return;
+	}
+
+	// H for help
+	if (key == GLFW_KEY_H)
+	{
+		std::cout << "\n=== CONTROLS ===" << std::endl;
+		std::cout << "0-9: Select object to spawn" << std::endl;
+		std::cout << "Click in world: Spawn selected object" << std::endl;
+		std::cout << "ESC: Cancel spawn mode" << std::endl;
+		std::cout << "P: Print palette" << std::endl;
+		std::cout << "H: Show this help" << std::endl;
+		std::cout << "================\n" << std::endl;
+		return;
+	}
 }
 
 

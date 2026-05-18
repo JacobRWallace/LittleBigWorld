@@ -158,10 +158,16 @@
     <ClInclude Include="src\input.h" />
     <ClInclude Include="src\model.h" />
     <ClInclude Include="src\object.h" />
+    <ClInclude Include="src\object_manager.h" />
     <ClInclude Include="src\physics.h" />
     <ClInclude Include="src\shader.h" />
+    <ClInclude Include="src\spawn_manager.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="assets\objects\background.json" />
+    <None Include="assets\objects\border.json" />
+    <None Include="assets\objects\cube.json" />
+    <None Include="assets\objects\pod.json" />
     <None Include="assets\shaders\debug_hitboxOutline.glsl" />
     <None Include="assets\shaders\debug_hitboxColor.glsl" />
   </ItemGroup>

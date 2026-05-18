@@ -26,9 +26,6 @@
     <ClInclude Include="src\camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\input.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -47,6 +44,15 @@
     <ClInclude Include="src\cursor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\object_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\spawn_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\debug_hitboxOutline.glsl">
@@ -55,5 +61,9 @@
     <None Include="assets\shaders\debug_hitboxColor.glsl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="assets\objects\cube.json" />
+    <None Include="assets\objects\pod.json" />
+    <None Include="assets\objects\background.json" />
+    <None Include="assets\objects\border.json" />
   </ItemGroup>
 </Project>

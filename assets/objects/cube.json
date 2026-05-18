@@ -1,0 +1,33 @@
+{
+  "id": 1,
+  "category": "basic",
+  "name": "cube",
+  "displayName": "Test Cube",
+  "model": {
+    "path": "assets/cube.obj",
+    "scale": [1.0, 1.0, 1.0],
+    "offset": [0.0, 0.0, 0.0]
+  },
+  "texture": {
+    "path": ""
+  },
+  "physics": {
+    "mass": 1.0,
+    "friction": 0.8,
+    "bounciness": 0.5,
+    "hitbox": {
+      "type": "box",
+      "dimensions": [2.0, 2.0, 2.0],
+      "offset": [0.0, 0.0, 0.0]
+    }
+  },
+  "visuals": {
+    "baseColor": [0.8, 0.8, 0.9],
+    "highlightColor": [1.2, 1.2, 1.5]
+  },
+  "interaction": {
+    "canBeGrabbed": true,
+    "canBeRotated": true,
+    "layerIndex": 1
+  }
+}

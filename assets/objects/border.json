@@ -1,0 +1,33 @@
+{
+  "id": 101,
+  "category": "environment",
+  "name": "border",
+  "displayName": "Level Border",
+  "model": {
+    "path": "assets/cube.obj",
+    "scale": [1.0, 5.0, 1.0],
+    "offset": [0.0, 0.0, 0.0]
+  },
+  "texture": {
+    "path": ""
+  },
+  "physics": {
+    "mass": 0.0,
+    "friction": 0.5,
+    "bounciness": 0.2,
+    "hitbox": {
+      "type": "box",
+      "dimensions": [2.0, 10.0, 2.0],
+      "offset": [0.0, 0.0, 0.0]
+    }
+  },
+  "visuals": {
+    "baseColor": [0.3, 0.3, 0.3],
+    "highlightColor": [0.5, 0.5, 0.5]
+  },
+  "interaction": {
+    "canBeGrabbed": false,
+    "canBeRotated": false,
+    "layerIndex": 1
+  }
+}

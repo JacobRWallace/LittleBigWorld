@@ -4,11 +4,13 @@
 #include <btBulletDynamicsCommon.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletCollision/CollisionShapes/btBoxShape.h>
+#include <BulletCollision/CollisionShapes/btConvexHullShape.h>
 #include <BulletCollision/CollisionShapes/btStaticPlaneShape.h>
 #include <BulletDynamics/Dynamics/btDynamicsWorld.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
+#include "object_manager.h"
 
 // LBP 2.5D Layer System
 const float LAYER_THICKNESS = 0.3f;  // How thick each layer is
@@ -27,8 +29,10 @@ public:
     glm::mat4 modelMatrix;
     int layerIndex;  // Which layer (0, 1, or 2)
     bool allowRotation;  // Can be rotated by tools
+    const ObjectDef* objectDef;  // Reference to object template
 
-    RigidBody(btRigidBody* btBody, int layer = 1) : body(btBody), layerIndex(layer), allowRotation(false)
+    RigidBody(btRigidBody* btBody, int layer = 1, const ObjectDef* def = nullptr) 
+        : body(btBody), layerIndex(layer), allowRotation(false), objectDef(def)
     {
         updateMatrix();
         LockToLayer();
@@ -183,38 +187,64 @@ public:
         delete collisionConfiguration;
     }
 
-    RigidBody* AddBox(glm::vec3 position, glm::vec3 scale, float mass = 1.0f, int layer = 1)
+    RigidBody* AddObjectFromTemplate(const ObjectDef* objDef, glm::vec3 position)
     {
-        btCollisionShape* shape = new btBoxShape(btVector3(scale.x * 0.5f, scale.y * 0.5f, scale.z * 0.5f));
+        if (!objDef)
+            return nullptr;
+
+        // Create collision shape based on hitbox type
+        btCollisionShape* shape = nullptr;
+
+        if (objDef->physics.hitbox.type == "convexHull" && !objDef->physics.hitbox.vertices.empty())
+        {
+            // Create convex hull from vertices
+            btConvexHullShape* hullShape = new btConvexHullShape();
+            for (const auto& vertex : objDef->physics.hitbox.vertices)
+            {
+                hullShape->addPoint(btVector3(vertex.x, vertex.y, vertex.z));
+            }
+            shape = hullShape;
+        }
+        else
+        {
+            // Default to box
+            glm::vec3 dims = objDef->physics.hitbox.dimensions;
+            shape = new btBoxShape(btVector3(dims.x * 0.5f, dims.y * 0.5f, dims.z * 0.5f));
+        }
+
+        // Apply hitbox offset to position
+        glm::vec3 finalPos = position + objDef->physics.hitbox.offset;
 
         btTransform transform;
         transform.setIdentity();
-        // Constrain to layer Z
-        float layerZ = (layer == 0) ? LAYER_0_Z : (layer == 2) ? LAYER_2_Z : LAYER_1_Z;
-        transform.setOrigin(btVector3(position.x, position.y, layerZ));
+        float layerZ = (objDef->interaction.layerIndex == 0) ? LAYER_0_Z : 
+                       (objDef->interaction.layerIndex == 2) ? LAYER_2_Z : LAYER_1_Z;
+        transform.setOrigin(btVector3(finalPos.x, finalPos.y, layerZ));
 
         btMotionState* motionState = new btDefaultMotionState(transform);
         btVector3 inertia(0, 0, 0);
 
-        if (mass != 0.0f)
-            shape->calculateLocalInertia(mass, inertia);
+        if (objDef->physics.mass != 0.0f)
+            shape->calculateLocalInertia(objDef->physics.mass, inertia);
 
-        btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(mass, motionState, shape, inertia);
+        btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(objDef->physics.mass, motionState, shape, inertia);
         btRigidBody* rigidBody = new btRigidBody(rigidBodyCI);
 
-        // 2.5D physics settings
-        rigidBody->setDamping(0.1f, 0.0f);  // Minimal linear damping, no angular (locked anyway)
-        rigidBody->setRestitution(0.5f);    // Normal bounce
+        // Apply physics properties from ObjectDef
+        rigidBody->setDamping(0.1f, 0.0f);
+        rigidBody->setRestitution(objDef->physics.bounciness);
+        rigidBody->setFriction(objDef->physics.friction);
         rigidBody->setCollisionFlags(rigidBody->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
-        // Prevent sleeping so gravity works
+        // Prevent sleeping
         rigidBody->setSleepingThresholds(0.0f, 0.0f);
         rigidBody->activate(true);
 
-        // Add with default collision group and mask to allow object-to-object collision
+        // Add to world
         dynamicsWorld->addRigidBody(rigidBody, 1, -1);
 
-        RigidBody* wrapper = new RigidBody(rigidBody, layer);
+        // Create wrapper with ObjectDef reference
+        RigidBody* wrapper = new RigidBody(rigidBody, objDef->interaction.layerIndex, objDef);
         rigidBodies.push_back(wrapper);
         return wrapper;
     }
@@ -232,7 +262,7 @@ public:
         btRigidBody* rigidBody = new btRigidBody(rigidBodyCI);
         dynamicsWorld->addRigidBody(rigidBody);
 
-        RigidBody* wrapper = new RigidBody(rigidBody, 1);  // Plane on middle layer
+        RigidBody* wrapper = new RigidBody(rigidBody, 1, nullptr);
         rigidBodies.push_back(wrapper);
         return wrapper;
     }

@@ -1,0 +1,33 @@
+{
+  "id": 100,
+  "category": "environment",
+  "name": "background",
+  "displayName": "Background Floor",
+  "model": {
+    "path": "assets/cube.obj",
+    "scale": [10.0, 3.0, 10.0],
+    "offset": [0.0, 0.0, 0.0]
+  },
+  "texture": {
+    "path": ""
+  },
+  "physics": {
+    "mass": 0.0,
+    "friction": 0.5,
+    "bounciness": 0.3,
+    "hitbox": {
+      "type": "box",
+      "dimensions": [20.0, 6.0, 20.0],
+      "offset": [0.0, 0.0, 0.0]
+    }
+  },
+  "visuals": {
+    "baseColor": [0.5, 0.5, 0.5],
+    "highlightColor": [0.7, 0.7, 0.7]
+  },
+  "interaction": {
+    "canBeGrabbed": false,
+    "canBeRotated": false,
+    "layerIndex": 1
+  }
+}

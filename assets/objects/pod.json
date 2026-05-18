@@ -1,0 +1,33 @@
+{
+  "id": 2,
+  "category": "basic",
+  "name": "pod",
+  "displayName": "Space Pod",
+  "model": {
+    "path": "assets/pod/pod.obj",
+    "scale": [0.01, 0.01, 0.01],
+    "offset": [0.0, -1.5, 0.0]
+  },
+  "texture": {
+    "path": ""
+  },
+  "physics": {
+    "mass": 2.0,
+    "friction": 0.8,
+    "bounciness": 0.5,
+    "hitbox": {
+      "type": "box",
+      "dimensions": [1.2, 3.0, 1.0],
+      "offset": [0.0, 0.0, 0.0]
+    }
+  },
+  "visuals": {
+    "baseColor": [0.9, 0.8, 0.8],
+    "highlightColor": [1.5, 1.2, 1.2]
+  },
+  "interaction": {
+    "canBeGrabbed": true,
+    "canBeRotated": true,
+    "layerIndex": 1
+  }
+}
