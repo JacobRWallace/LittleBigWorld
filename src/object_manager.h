@@ -65,9 +65,11 @@ public:
             }
 
             int count = 0;
-            for (const auto& entry : fs::directory_iterator(directory))
+
+            // Search recursively for all JSON files in directory and subdirectories
+            for (const auto& entry : fs::recursive_directory_iterator(directory))
             {
-                if (entry.path().extension() == ".json")
+                if (entry.path().extension() == ".json" && fs::is_regular_file(entry))
                 {
                     std::ifstream file(entry.path());
                     if (!file.is_open()) continue;

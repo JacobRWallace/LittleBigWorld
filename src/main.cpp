@@ -113,7 +113,7 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Load model with placeholder texture
-	Model* cubeModel = new Model("assets/cube.obj", placeholderTexture);
+	Model* cubeModel = new Model("assets/objects/cube/cube.obj", placeholderTexture);
 
 	// Initialize instances
 	gPhysics = new PhysicsEngine();
