@@ -17,8 +17,8 @@
     "bounciness": 0.5,
     "hitbox": {
       "type": "box",
-      "dimensions": [1.2, 3.0, 1.0],
-      "offset": [0.0, 0.0, 0.0]
+      "dimensions": [1.2, 2.0, 1.0],
+      "offset": [0.0, -0.5, 0.0]
     }
   },
   "visuals": {

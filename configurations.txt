@@ -54,6 +54,8 @@ Additional Include Directories
 
 Added:
 
+C:\Users\jacob\Desktop\LittleBigWorld\libs\imgui\backends
+C:\Users\jacob\Desktop\LittleBigWorld\libs\imgui
 C:\Users\jacob\Desktop\LittleBigWorld\libs\glfw\include;
 C:\Users\jacob\Desktop\LittleBigWorld\libs\glad\include;
 C:\Users\jacob\Desktop\LittleBigWorld\libs\bullet\include;

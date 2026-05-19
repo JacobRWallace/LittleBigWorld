@@ -216,6 +216,11 @@ public:
         return paletteOrder.size();
     }
 
+    int GetSelectedPaletteIndex() const
+    {
+        return selectedPaletteIndex;
+    }
+
     const std::vector<std::string>& GetPaletteOrder() const
     {
         return paletteOrder;

@@ -7,7 +7,8 @@
 // TODO: Make background a .json object file that is loaded in every level.
 // TODO: Make Cube object a .json as well as pod.json that can be edited and reloaded without recompiling.
 
-
+// TODO: how can we get these textures to load on the models for cube.obj, pod.obj
+// TODO: Need to find an optimal file structure for a game wiht a ton of objects with models textures and metadata.
 
 
 
@@ -27,6 +28,7 @@
 #include "cursor.h"
 #include "object_manager.h"
 #include "spawn_manager.h"
+#include "ui.h"
 
 const unsigned int SCR_WIDTH = 1024;
 const unsigned int SCR_HEIGHT = 768;
@@ -41,6 +43,7 @@ Debug* gDebug = nullptr;
 CursorManager* gCursor = nullptr;
 ObjectManager* gObjectManager = nullptr;
 SpawnManager* gSpawnManager = nullptr;
+SpawnUI* gSpawnUI = nullptr;
 
 // Model cache
 std::map<std::string, Model*> gModelCache;
@@ -86,6 +89,13 @@ int main()
 		return -1;
 	}
 
+	// Initialize ImGui
+	if (!ImGuiManager::Initialize(window, "#version 330"))
+	{
+		std::cout << "Failed to initialize ImGui\n";
+		return -1;
+	}
+
 	glEnable(GL_DEPTH_TEST);
 
 	// Build and compile shader
@@ -128,6 +138,10 @@ int main()
 
 	// Initialize SpawnManager
 	gSpawnManager = new SpawnManager(gObjectManager, gPhysics);
+
+	// Initialize Spawn UI
+	gSpawnUI = new SpawnUI(gObjectManager, gSpawnManager);
+	gSpawnUI->LoadIconTextures();
 
 	// Load models for all objects
 	for (const auto& name : gObjectManager->GetPaletteOrder())
@@ -231,6 +245,11 @@ int main()
 		}
 		gDebug->Render(shader, projection, view);
 
+		// Render ImGui
+		ImGuiManager::NewFrame();
+		gSpawnUI->Render();
+		ImGuiManager::Render();
+
 		// Update cursor based on interaction state
 		if (gInput->IsGrabbingAny())
 		{
@@ -257,6 +276,10 @@ int main()
 	delete gCursor;
 	delete gObjectManager;
 	delete gSpawnManager;
+	delete gSpawnUI;
+
+	// Shutdown ImGui
+	ImGuiManager::Shutdown();
 
 	// Clean up models
 	delete cubeModel;
@@ -277,6 +300,11 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+	// Don't process game input if ImGui wants the mouse
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureMouse && button == GLFW_MOUSE_BUTTON_LEFT)
+		return;
+
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 	{
 		// Check if in spawn mode
@@ -316,6 +344,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (action != GLFW_PRESS)
 		return;
 
+	// Don't process game input if ImGui wants keyboard
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.WantCaptureKeyboard && key != GLFW_KEY_ESCAPE && key != GLFW_KEY_U)
+		return;
+
 	// ESC to cancel spawn mode
 	if (key == GLFW_KEY_ESCAPE)
 	{
@@ -348,6 +381,13 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		return;
 	}
 
+	// U to toggle UI
+	if (key == GLFW_KEY_U)
+	{
+		gSpawnUI->Toggle();
+		return;
+	}
+
 	// H for help
 	if (key == GLFW_KEY_H)
 	{
@@ -356,6 +396,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		std::cout << "Click in world: Spawn selected object" << std::endl;
 		std::cout << "ESC: Cancel spawn mode" << std::endl;
 		std::cout << "P: Print palette" << std::endl;
+		std::cout << "U: Toggle UI" << std::endl;
 		std::cout << "H: Show this help" << std::endl;
 		std::cout << "================\n" << std::endl;
 		return;
