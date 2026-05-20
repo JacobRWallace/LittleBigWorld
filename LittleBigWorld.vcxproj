@@ -119,15 +119,18 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\jacob\Desktop\LittleBigWorld\libs\imgui\backends;C:\Users\jacob\Desktop\LittleBigWorld\libs\imgui;C:\Users\jacob\Desktop\LittleBigWorld\libs\glfw\include;C:\Users\jacob\Desktop\LittleBigWorld\libs\glad\include;C:\Users\jacob\Desktop\LittleBigWorld\libs\bullet\include;C:\Users\jacob\Desktop\LittleBigWorld\libs\assimp\include;C:\Users\jacob\Desktop\LittleBigWorld\libs\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\libs\imgui\backends;$(ProjectDir)\libs\imgui;$(ProjectDir)\libs\glfw\include;$(ProjectDir)\libs\glad\include;$(ProjectDir)\libs\bullet\include;$(ProjectDir)\libs\assimp\include;$(ProjectDir)\libs\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\jacob\Desktop\LittleBigWorld\libs\glfw\lib-vc2022;C:\Users\jacob\Desktop\LittleBigWorld\libs\bullet\lib\Debug;C:\Users\jacob\Desktop\LittleBigWorld\libs\assimp\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)\libs\glfw\lib-vc2022;$(ProjectDir)\libs\bullet\lib\Debug;$(ProjectDir)\libs\assimp\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;assimp-vc143-mt.lib;BulletCollision_Debug.lib;BulletDynamics_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /D "$(ProjectDir)libs\assimp\bin\x64\assimp-vc143-mt.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
