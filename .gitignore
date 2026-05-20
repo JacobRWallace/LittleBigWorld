@@ -1,4 +1,4 @@
 ﻿.vs/
-build/
-x64/
+/build/
+/x64/
 *.vcxproj.user
